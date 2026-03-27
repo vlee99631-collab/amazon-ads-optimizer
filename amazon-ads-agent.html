@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Ads Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0d0f14;
+    --bg2:     #141720;
+    --bg3:     #1c2030;
+    --bg4:     #252a3a;
+    --border:  #2e3448;
+    --border2: #3d4560;
+    --text:    #f0f2f8;
+    --text2:   #b0b6cc;
+    --text3:   #6b7494;
+    --accent:  #4f8ef7;
+    --accent2: #3a6fd4;
+    --accent-glow: rgba(79,142,247,0.15);
+    --red:     #f05555;
+    --red-bg:  rgba(240,85,85,0.12);
+    --orange:  #f09040;
+    --orange-bg: rgba(240,144,64,0.12);
+    --yellow:  #e0c040;
+    --yellow-bg: rgba(224,192,64,0.12);
+    --blue:    #4f8ef7;
+    --blue-bg: rgba(79,142,247,0.12);
+    --green:   #50c090;
+    --sidebar-w: 224px;
+    --font-mono: 'DM Mono', monospace;
+    --font-ui:   'Noto Sans SC', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body { height:100%; overflow:hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo-mark { display:flex; align-items:center; gap:10px; }
+  .logo-icon {
+    width:32px; height:32px; background:var(--accent);
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .logo-text { font-size:13.5px; font-weight:600; line-height:1.35; color:var(--text); }
+  .logo-sub  { font-size:11px; color:var(--text3); font-family:var(--font-mono); margin-top:6px; }
+
+  .nav-section { padding:12px 8px 4px; }
+  .nav-label {
+    font-size:10px; font-family:var(--font-mono); color:var(--text3);
+    letter-spacing:.1em; text-transform:uppercase; padding:0 8px; margin-bottom:4px;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:9px;
+    padding:9px 10px; border-radius:8px;
+    font-size:13px; font-weight:500; color:var(--text2);
+    cursor:pointer; transition:all .15s; margin-bottom:2px;
+    border:1px solid transparent;
+  }
+  .nav-item:hover { background:var(--bg3); color:var(--text); }
+  .nav-item.active { background:var(--accent-glow); color:var(--accent); border-color:rgba(79,142,247,0.25); }
+  .nav-icon { width:16px; height:16px; opacity:.75; flex-shrink:0; }
+  .nav-item.active .nav-icon { opacity:1; }
+  .badge-soon {
+    margin-left:auto; font-size:10px;
+    background:var(--bg4); color:var(--text3);
+    padding:2px 7px; border-radius:4px; font-family:var(--font-mono);
+  }
+
+  .sidebar-footer {
+    margin-top:auto; padding:14px 16px;
+    border-top:1px solid var(--border);
+    font-size:11px; color:var(--text2);
+    font-family:var(--font-mono); line-height:1.7; flex-shrink:0;
+  }
+
+  /* ── MAIN: fills remaining space, scrolls ── */
+  .main {
+    flex:1;
+    height:100vh;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+
+  /* ── TOPBAR: sticky inside .main ── */
+  .topbar {
+    height:52px; flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center;
+    padding:0 28px; gap:10px;
+    background:var(--bg2);
+    position:sticky; top:0; z-index:50;
+  }
+  .topbar-crumb { font-size:12px; color:var(--text3); font-family:var(--font-mono); }
+  .topbar-sep   { color:var(--border2); }
+  .topbar-title { font-size:14px; font-weight:600; color:var(--text); }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .chip {
+    font-size:11px; font-family:var(--font-mono);
+    padding:3px 10px; border-radius:5px;
+    border:1px solid var(--border2); color:var(--text2); background:var(--bg3);
+  }
+  .chip.on { border-color:var(--accent); color:var(--accent); }
+
+  /* ── CONTENT ── */
+  .content { padding:28px; flex:1; }
+
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* ── IMPORT ── */
+  .import-zone {
+    border:1.5px dashed var(--border2); border-radius:14px;
+    background:var(--bg2); padding:52px 28px;
+    text-align:center; cursor:pointer; transition:all .2s;
+    position:relative; overflow:hidden;
+  }
+  .import-zone:hover, .import-zone.drag-over { border-color:var(--accent); background:var(--bg3); }
+  .import-zone::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse at 50% 0%, var(--accent-glow), transparent 70%);
+    opacity:0; transition:opacity .3s;
+  }
+  .import-zone:hover::before, .import-zone.drag-over::before { opacity:1; }
+  .import-icon {
+    width:48px; height:48px; margin:0 auto 16px;
+    background:var(--bg4); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .import-title { font-size:16px; font-weight:600; margin-bottom:6px; }
+  .import-sub   { font-size:13px; color:var(--text2); line-height:1.7; }
+  #fileInput { display:none; }
+
+  .import-list { margin-top:20px; display:flex; flex-direction:column; gap:6px; }
+  .import-file-item {
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:9px 14px; font-size:13px;
+  }
+  .file-name { color:var(--text); flex:1; }
+  .file-size { font-family:var(--font-mono); font-size:11px; color:var(--text3); }
+  .file-ok   { color:var(--green); }
+
+  .import-actions { margin-top:16px; display:flex; gap:10px; }
+  .btn {
+    padding:9px 22px; border-radius:8px;
+    font-size:13px; font-family:var(--font-ui); font-weight:600;
+    cursor:pointer; border:none; transition:all .15s;
+  }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-ghost { background:var(--bg3); color:var(--text2); border:1px solid var(--border2); }
+  .btn-ghost:hover { background:var(--bg4); color:var(--text); }
+
+  .status-bar {
+    margin-top:16px; display:none;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:10px; padding:14px 18px;
+  }
+  .status-bar.show { display:block; }
+  .status-line { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); margin-bottom:6px; }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+  .prog-bar  { height:3px; background:var(--bg4); border-radius:2px; overflow:hidden; margin-top:8px; }
+  .prog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .4s ease; }
+
+  /* ── AGENT PAGE ── */
+  .page-title { font-size:22px; font-weight:700; line-height:1.3; margin-bottom:4px; }
+  .page-sub   { font-size:13px; color:var(--text2); }
+
+  .meta-chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .meta-chip {
+    font-size:11.5px; font-family:var(--font-mono);
+    padding:4px 11px; border-radius:5px;
+    background:var(--bg3); border:1px solid var(--border2); color:var(--text2);
+  }
+  .meta-chip span { color:var(--text); font-weight:500; }
+
+  .sum-grid {
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:12px; margin:22px 0 24px;
+  }
+  .sum-card {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:12px; padding:18px 20px;
+  }
+  .sum-label { font-size:11px; color:var(--text3); font-family:var(--font-mono); margin-bottom:8px; }
+  .sum-val   { font-size:32px; font-weight:700; line-height:1; }
+  .sum-sub   { font-size:11px; color:var(--text2); margin-top:6px; }
+  .sum-card.red    { border-color:rgba(240,85,85,.3); }   .sum-card.red    .sum-val { color:var(--red); }
+  .sum-card.orange { border-color:rgba(240,144,64,.3); }  .sum-card.orange .sum-val { color:var(--orange); }
+  .sum-card.blue   { border-color:rgba(79,142,247,.3); }  .sum-card.blue   .sum-val { color:var(--blue); }
+  .sum-card.yellow { border-color:rgba(224,192,64,.3); }  .sum-card.yellow .sum-val { color:var(--yellow); }
+
+  .filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .filter-label { font-size:12px; color:var(--text3); font-family:var(--font-mono); margin-right:2px; }
+  .filter-btn {
+    padding:6px 14px; border-radius:7px; font-size:12.5px; font-weight:500;
+    cursor:pointer; border:1px solid var(--border);
+    background:var(--bg2); color:var(--text2); transition:all .15s; font-family:var(--font-ui);
+  }
+  .filter-btn:hover { border-color:var(--border2); color:var(--text); background:var(--bg3); }
+  .filter-btn.active { background:var(--bg4); border-color:var(--border2); color:var(--text); }
+
+  /* product group */
+  .product-group { margin-bottom:22px; }
+  .product-group-header {
+    display:flex; align-items:center; gap:12px;
+    padding:11px 16px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:10px 10px 0 0; cursor:pointer; user-select:none;
+  }
+  .product-group-header:hover { background:var(--bg4); }
+  .prod-name  { font-size:14px; font-weight:700; font-family:var(--font-mono); color:var(--text); }
+  .prod-count {
+    font-size:11px; font-family:var(--font-mono); color:var(--text3);
+    background:var(--bg4); padding:2px 9px; border-radius:4px;
+  }
+  .prod-expand { margin-left:auto; font-size:12px; color:var(--text3); transition:transform .2s; }
+  .product-group.collapsed .prod-expand { transform:rotate(-90deg); }
+  .product-group.collapsed .group-body  { display:none; }
+
+  .group-body { border:1px solid var(--border); border-top:none; border-radius:0 0 10px 10px; overflow:hidden; }
+
+  .col-headers {
+    display:grid; grid-template-columns:160px 1fr 1fr 220px;
+    background:var(--bg3); border-bottom:1px solid var(--border);
+  }
+  .col-h {
+    padding:8px 14px; font-size:11px; font-family:var(--font-mono); font-weight:500;
+    color:var(--text2); text-transform:uppercase; letter-spacing:.05em;
+    border-right:1px solid var(--border);
+  }
+  .col-h:last-child { border-right:none; }
+
+  .campaign-row {
+    display:grid; grid-template-columns:160px 1fr 1fr 220px;
+    border-bottom:1px solid var(--border); transition:background .15s;
+  }
+  .campaign-row:last-child { border-bottom:none; }
+  .campaign-row:hover { background:var(--bg3); }
+
+  .cr-state {
+    padding:15px 14px; display:flex; align-items:flex-start;
+    border-right:1px solid var(--border);
+  }
+  .state-badge {
+    font-size:11.5px; font-weight:600;
+    padding:4px 10px; border-radius:6px;
+    line-height:1.5; text-align:center; white-space:nowrap;
+  }
+  .state-badge.red    { background:var(--red-bg);    color:var(--red);    border:1px solid rgba(240,85,85,.25); }
+  .state-badge.orange { background:var(--orange-bg); color:var(--orange); border:1px solid rgba(240,144,64,.25); }
+  .state-badge.yellow { background:var(--yellow-bg); color:var(--yellow); border:1px solid rgba(224,192,64,.25); }
+  .state-badge.blue   { background:var(--blue-bg);   color:var(--blue);   border:1px solid rgba(79,142,247,.25); }
+
+  .cr-name {
+    padding:15px 16px; font-size:12.5px; font-weight:500; line-height:1.65;
+    color:var(--text); border-right:1px solid var(--border);
+    display:flex; align-items:center; word-break:break-all;
+  }
+
+  .cr-data {
+    padding:15px 16px; font-size:12px; line-height:1.9;
+    color:var(--text2); font-family:var(--font-mono);
+    border-right:1px solid var(--border); white-space:pre-line;
+  }
+  .cr-data .hi   { color:var(--text); font-weight:500; }
+  .cr-data .warn { color:var(--red);  font-weight:600; }
+
+  .cr-ops { padding:15px 14px; font-size:12.5px; line-height:1.85; color:var(--text2); }
+  .op-line { display:flex; gap:7px; margin-bottom:3px; align-items:flex-start; }
+  .op-num     { color:var(--accent); font-family:var(--font-mono); font-size:12px; flex-shrink:0; margin-top:1px; font-weight:600; }
+  .op-stop    { color:var(--red);    font-weight:600; }
+  .op-cpc     { color:var(--yellow); font-weight:500; }
+  .op-history { color:var(--orange); font-weight:500; }
+  .op-normal  { color:var(--text);   font-weight:500; }
+
+  /* logic */
+  .logic-section {
+    margin-top:30px; background:var(--bg2);
+    border:1px solid var(--border); border-radius:12px; overflow:hidden;
+  }
+  .logic-header {
+    padding:13px 20px; display:flex; align-items:center; gap:10px;
+    cursor:pointer; transition:background .15s;
+  }
+  .logic-header:hover { background:var(--bg3); }
+  .logic-title  { font-size:13px; font-weight:600; color:var(--text2); }
+  .logic-toggle { margin-left:auto; font-size:11px; color:var(--text3); font-family:var(--font-mono); }
+  .logic-body   { padding:18px 20px; display:none; border-top:1px solid var(--border); }
+  .logic-body.open { display:block; }
+  .logic-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .logic-card { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:13px 15px; }
+  .logic-state { font-size:11px; font-weight:700; margin-bottom:7px; font-family:var(--font-mono); }
+  .logic-rule  { font-size:12px; color:var(--text2); line-height:1.7; }
+  .logic-rule code {
+    background:var(--bg4); padding:1px 6px; border-radius:3px;
+    font-family:var(--font-mono); font-size:11px; color:var(--text);
+  }
+  .logic-note { margin-top:14px; font-size:11.5px; color:var(--text3); font-family:var(--font-mono); line-height:1.9; }
+
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
+  .empty-icon  { font-size:36px; margin-bottom:12px; }
+  .empty-text  { font-size:14px; line-height:1.7; }
+
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:3px; }
+
+  @keyframes rowIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  .campaign-row { animation:rowIn .18s ease both; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">A</div>
+      <div class="logo-text">Amazon Ads<br>Optimizer</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">工具</div>
+    <div class="nav-item" id="nav-import" onclick="switchPage('import')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="2" y="2" width="12" height="12" rx="2"/>
+        <path d="M8 5.5v5M5.5 8L8 11l2.5-3"/>
+      </svg>
+      数据导入
+    </div>
+    <div class="nav-item active" id="nav-agent" onclick="switchPage('agent')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="8" cy="8" r="5.5"/>
+        <path d="M5.5 8h5M8 5.5v5"/>
+      </svg>
+      极端值优化 Agent
+    </div>
+  </div>
+
+  <div class="nav-section" style="margin-top:6px;">
+    <div class="nav-label">即将上线</div>
+    <div class="nav-item" style="opacity:.75;pointer-events:none;">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M2 12l4-4 3 3 5-6"/>
+      </svg>
+      竞价优化 Agent
+      <span class="badge-soon">Soon</span>
+    </div>
+    <div class="nav-item" style="opacity:.75;pointer-events:none;">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="8" cy="6" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/>
+      </svg>
+      否词优化 Agent
+      <span class="badge-soon">Soon</span>
+    </div>
+    <div class="nav-item" style="opacity:.75;pointer-events:none;">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/>
+      </svg>
+      周报生成
+      <span class="badge-soon">Soon</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    判断周期<br>近3日前7天<br>3/15 – 3/21<br><br>v0.1 · 2026-03
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">极端值优化 Agent</span>
+  </div>
+
+  <div class="content">
+
+    <!-- IMPORT PAGE -->
+    <div class="page" id="page-import">
+      <div class="page-title">数据导入</div>
+      <div class="page-sub" style="margin-bottom:22px;">上传每日广告活动数据及目标数据表</div>
+      <div class="import-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="import-icon">📂</div>
+        <div class="import-title">拖拽上传 或 点击选择文件</div>
+        <div class="import-sub">支持多选 · xlsx 格式<br>每日广告活动数据 + 目标数据表</div>
+        <input type="file" id="fileInput" multiple accept=".xlsx">
+      </div>
+      <div class="import-list" id="importList"></div>
+      <div class="import-actions" id="importActions" style="display:none">
+        <button class="btn btn-primary" onclick="simulateProcess()">▶ 开始处理</button>
+        <button class="btn btn-ghost"   onclick="clearFiles()">清空</button>
+      </div>
+      <div class="status-bar" id="statusBar">
+        <div class="status-line"><div class="status-dot"></div><span id="statusText">正在读取文件...</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- AGENT PAGE -->
+    <div class="page active" id="page-agent">
+      <div class="page-title">广告活动极端值优化 Agent</div>
+      <div class="page-sub">识别并分类异常表现广告活动，给出优化操作建议</div>
+
+      <div class="meta-chips">
+        <span class="meta-chip">判断周期 <span>3/15–3/21（7天）</span></span>
+        <span class="meta-chip">近3日 <span>3/22–3/24</span></span>
+        <span class="meta-chip">产品平均CR <span>各产品汇总计算</span></span>
+        <span class="meta-chip">目标ACOS <span>3月目标数据表</span></span>
+      </div>
+
+      <div class="sum-grid">
+        <div class="sum-card red">
+          <div class="sum-label">关停建议</div>
+          <div class="sum-val">7</div>
+          <div class="sum-sub">空耗 + 低单量超高ACOS</div>
+        </div>
+        <div class="sum-card orange">
+          <div class="sum-label">人工审核</div>
+          <div class="sum-val">3</div>
+          <div class="sum-sub">高单量超高 + 中单量偏高</div>
+        </div>
+        <div class="sum-card blue">
+          <div class="sum-label">降价控效</div>
+          <div class="sum-val">6</div>
+          <div class="sum-sub">高单量偏高ACOS</div>
+        </div>
+        <div class="sum-card yellow">
+          <div class="sum-label">涉及产品</div>
+          <div class="sum-val">6</div>
+          <div class="sum-sub">共 14 条极端值活动</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <span class="filter-label">筛选：</span>
+        <button class="filter-btn active" onclick="filterState(this,'all')">全部</button>
+        <button class="filter-btn" onclick="filterState(this,'空耗、0转化')">空耗·0转化</button>
+        <button class="filter-btn" onclick="filterState(this,'低单量、超高Acos')">低单量·超高ACOS</button>
+        <button class="filter-btn" onclick="filterState(this,'高单量、超高Acos')">高单量·超高ACOS</button>
+        <button class="filter-btn" onclick="filterState(this,'低单量、偏高Acos')">低单量·偏高ACOS</button>
+        <button class="filter-btn" onclick="filterState(this,'中单量、偏高Acos')">中单量·偏高ACOS</button>
+        <button class="filter-btn" onclick="filterState(this,'高单量、偏高Acos')">高单量·偏高ACOS</button>
+      </div>
+
+      <div id="agentData"></div>
+
+      <div class="logic-section">
+        <div class="logic-header" onclick="toggleLogic()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2.5 1.5"/>
+          </svg>
+          <span class="logic-title">判断逻辑说明</span>
+          <span class="logic-toggle" id="logicToggle">▼ 展开</span>
+        </div>
+        <div class="logic-body" id="logicBody">
+          <div class="logic-grid">
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--red)">空耗·0转化</div>
+              <div class="logic-rule">点击 ≥ <code>1/2% = 50次</code><br>转化 = 0</div>
+            </div>
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--red)">低单量·超高ACOS</div>
+              <div class="logic-rule">点击 ≤ <code>14/产品平均CR</code><br>ACOS > <code>2×目标ACOS</code></div>
+            </div>
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--red)">高单量·超高ACOS</div>
+              <div class="logic-rule">点击 > <code>14/产品平均CR</code><br>ACOS > <code>2×目标ACOS</code></div>
+            </div>
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--orange)">低单量·偏高ACOS</div>
+              <div class="logic-rule">点击 ≤ <code>3/产品平均CR</code><br>ACOS > <code>1.5×目标ACOS</code></div>
+            </div>
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--yellow)">中单量·偏高ACOS</div>
+              <div class="logic-rule">点击在 <code>3~13/CR</code> 之间<br>ACOS > <code>1.5×目标ACOS</code></div>
+            </div>
+            <div class="logic-card">
+              <div class="logic-state" style="color:var(--blue)">高单量·偏高ACOS</div>
+              <div class="logic-rule">点击 > <code>13/产品平均CR</code><br>ACOS > <code>1.5×目标ACOS</code></div>
+            </div>
+          </div>
+          <div class="logic-note">
+            · 近30天转化 &gt; 50 → 追加"历史高单量，建议复查"提示<br>
+            · 产品平均CR = 该产品全部活动7天总销量 ÷ 总点击<br>
+            · 最高CPC参考值 = 目标ACOS × 产品平均CR × 客单价
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DATA = [
+  { product:"AQX12ACP", campaigns:[
+    { state:"低单量、超高Acos", name:"US14TK培养-AQX12ACP-rain/rubber精准-20260226",
+      data:"点击 20次 < 高单量阈值 14/13.6% = 103次\nACOS 48.4% > 2×目标23.3% = 46.7%",
+      ops:[{t:"stop",text:"关停活动"},{t:"history",text:"30天转化22单（≤50，无需复查）"}]},
+    { state:"低单量、超高Acos", name:"US14TK培养-AQX12ACP-steel toe相关精准-20260226-323重启",
+      data:"点击 88次 < 高单量阈值 14/13.6% = 103次\nACOS 86.3% > 2×目标23.3% = 46.7%",
+      ops:[{t:"stop",text:"关停活动"},{t:"history",text:"历史30天转化90单（>50），建议人工复查后再执行"}]}
+  ]},
+  { product:"XSX09WCP", campaigns:[
+    { state:"高单量、偏高Acos", name:"US14TK-XSX09WCP-garden/mid calfTOP-20260128",
+      data:"点击 267次 ≥ 中单量阈值 13/12.8% = 102次\nACOS 40.7% > 1.5×目标22.6% = 33.9%",
+      ops:[{t:"normal",text:"重点排查低效关键词并添加否定词"},{t:"normal",text:"降低竞价控制ACOS"},
+           {t:"cpc",text:"参考最高CPC = 22.6%×12.8%×$62 = $1.79（≈$1.80）"},
+           {t:"history",text:"历史30天转化144单（>50），建议人工复查后再执行"}]}
+  ]},
+  { product:"XSX14TCP", campaigns:[
+    { state:"高单量、超高Acos", name:"US14TK-XSX14TCP-品牌-20250901-0120加量",
+      data:"点击 80次 < 高单量阈值 14/14.1% = 99次\nACOS 23.3% > 2×目标11.6% = 23.2%",
+      ops:[{t:"normal",text:"人工审核保留可能性"},{t:"normal",text:"若保留须大幅重构竞价与关键词结构"},
+           {t:"history",text:"历史30天转化87单（>50），建议人工复查后再执行"}]},
+    { state:"中单量、偏高Acos", name:"US14TK-XSX14TCP-rubber/mud/snow精准-20260302",
+      data:"点击 22次，介于 21–92次（3–13/14.1%）\nACOS 21.9% > 1.5×目标11.6% = 17.4%",
+      ops:[{t:"normal",text:"人工审核保留必要性"},{t:"normal",text:"转化分散可考虑关停"},
+           {t:"history",text:"30天转化10单（≤50，无需复查）"}]},
+    { state:"高单量、偏高Acos", name:"US14TK-XSX14TCP-boy词-20231212",
+      data:"点击 146次 ≥ 中单量阈值 13/14.1% = 92次\nACOS 20.0% > 1.5×目标11.6% = 17.4%",
+      ops:[{t:"normal",text:"重点排查低效关键词并添加否定词"},{t:"normal",text:"降低竞价控制ACOS"},
+           {t:"cpc",text:"参考最高CPC = 11.6%×14.1%×$45 = $0.74"},
+           {t:"history",text:"历史30天转化117单（>50），建议人工复查后再执行"}]},
+    { state:"高单量、偏高Acos", name:"US14TK-XSX14TCP-rain boots boys-20250318",
+      data:"点击 124次 ≥ 中单量阈值 13/14.1% = 92次\nACOS 20.4% > 1.5×目标11.6% = 17.4%",
+      ops:[{t:"normal",text:"重点排查低效关键词并添加否定词"},{t:"normal",text:"降低竞价控制ACOS"},
+           {t:"cpc",text:"参考最高CPC = 11.6%×14.1%×$45 = $0.74"},
+           {t:"history",text:"历史30天转化72单（>50），建议人工复查后再执行"}]}
+  ]},
+  { product:"XSX32CP", campaigns:[
+    { state:"低单量、超高Acos", name:"US14TA-XSX32CP紧密0.7-20260312",
+      data:"点击 104次 ≤ 高单量阈值 14/13.4% = 104次\nACOS 32.9% > 2×目标17.3% = 34.5%",
+      ops:[{t:"stop",text:"关停活动"},{t:"history",text:"30天转化6单（≤50，无需复查）"}]},
+    { state:"中单量、偏高Acos", name:"US14TK-XSX32CP-rubber/mud/snow精准-20260215",
+      data:"点击 45次，介于 22–97次（3–13/13.4%）\nACOS 28.5% > 1.5×目标17.3% = 25.9%",
+      ops:[{t:"normal",text:"人工审核保留必要性"},{t:"normal",text:"转化分散可考虑关停"},
+           {t:"history",text:"30天转化18单（≤50，无需复查）"}]},
+    { state:"中单量、偏高Acos", name:"US14TK-XSX32CP-waterproof boots精准-20260215",
+      data:"点击 62次，介于 22–97次（3–13/13.4%）\nACOS 31.2% > 1.5×目标17.3% = 25.9%",
+      ops:[{t:"normal",text:"人工审核保留必要性"},{t:"normal",text:"转化分散可考虑关停"},
+           {t:"history",text:"30天转化24单（≤50，无需复查）"}]}
+  ]},
+  { product:"XSX42KCP", campaigns:[
+    { state:"高单量、偏高Acos", name:"US14TK-XSX42KCP-核心广泛0.5-规则竞价测试Roas4对比-20260106",
+      data:"点击 238次 ≥ 中单量阈值 13/15.9% = 82次\nACOS 25.3% > 1.5×目标15.6% = 23.4%",
+      ops:[{t:"normal",text:"重点排查低效关键词并添加否定词"},{t:"normal",text:"降低竞价控制ACOS"},
+           {t:"cpc",text:"参考最高CPC = 15.6%×15.9%×$42 = $1.04"},
+           {t:"history",text:"历史30天转化229单（>50），建议人工复查后再执行"}]}
+  ]},
+  { product:"XSX67WCP", campaigns:[
+    { state:"空耗、0转化", name:"US14TK-XSX67WCP-rain流量词精准-20260227",
+      data:"点击 88次 ≥ 阈值 1/2% = 50次\n转化 0单",
+      ops:[{t:"stop",text:"关停活动"},{t:"history",text:"30天转化28单（≤50，无需复查）"}]},
+    { state:"低单量、超高Acos", name:"US14TK-XSX67WCP-waterproof boots精准-20260227",
+      data:"点击 137次 < 高单量阈值 14/8.4% = 167次\nACOS 58.5% > 2×目标19.2% = 38.5%",
+      ops:[{t:"stop",text:"关停活动"},{t:"history",text:"历史30天转化53单（>50），建议人工复查后再执行"}]}
+  ]}
+];
+
+const stateColor = {
+  "空耗、0转化":"red","低单量、超高Acos":"red","高单量、超高Acos":"red",
+  "低单量、偏高Acos":"orange","中单量、偏高Acos":"yellow","高单量、偏高Acos":"blue"
+};
+const opNums = ["①","②","③","④","⑤","⑥"];
+
+function renderData(filter='all') {
+  const c = document.getElementById('agentData');
+  c.innerHTML = '';
+  let shown = 0;
+  DATA.forEach(prod => {
+    const list = filter==='all' ? prod.campaigns : prod.campaigns.filter(x=>x.state===filter);
+    if (!list.length) return;
+    shown += list.length;
+    const g = document.createElement('div');
+    g.className = 'product-group';
+    g.innerHTML = `
+      <div class="product-group-header" onclick="toggleGroup(this)">
+        <span class="prod-name">${prod.product}</span>
+        <span class="prod-count">${list.length} 条极端值</span>
+        <span class="prod-expand">▾</span>
+      </div>
+      <div class="group-body">
+        <div class="col-headers">
+          <div class="col-h">极端值类型</div>
+          <div class="col-h">广告活动名称</div>
+          <div class="col-h">数据对比（当前值 vs 判断标准）</div>
+          <div class="col-h">建议操作</div>
+        </div>
+        ${list.map((cam,i)=>{
+          const col = stateColor[cam.state]||'blue';
+          const opsH = cam.ops.map((op,j)=>{
+            const cls = op.t==='stop'?'op-stop':op.t==='cpc'?'op-cpc':op.t==='history'?'op-history':'op-normal';
+            return `<div class="op-line"><span class="op-num">${opNums[j]}</span><span class="${cls}">${op.text}</span></div>`;
+          }).join('');
+          return `<div class="campaign-row" style="animation-delay:${i*.04}s">
+            <div class="cr-state"><span class="state-badge ${col}">${cam.state}</span></div>
+            <div class="cr-name">${cam.name}</div>
+            <div class="cr-data">${fmtData(cam.data)}</div>
+            <div class="cr-ops">${opsH}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    c.appendChild(g);
+  });
+  if (!shown) c.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">该分类下无极端值活动</div></div>`;
+}
+
+function fmtData(t) {
+  return t
+    .replace(/(\d+\.?\d*%)/g, m=>`<span class="hi">${m}</span>`)
+    .replace(/(\d+次)/g,       m=>`<span class="hi">${m}</span>`)
+    .replace(/(0单)/g,         m=>`<span class="warn">${m}</span>`);
+}
+function filterState(btn, val) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderData(val);
+}
+function toggleGroup(h) { h.closest('.product-group').classList.toggle('collapsed'); }
+function toggleLogic() {
+  const b=document.getElementById('logicBody'), t=document.getElementById('logicToggle');
+  b.classList.toggle('open');
+  t.textContent = b.classList.contains('open') ? '▲ 收起' : '▼ 展开';
+}
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  document.getElementById('topbar-title').textContent = page==='import'?'数据导入':'极端值优化 Agent';
+}
+
+let files=[];
+const dz=document.getElementById('dropZone'), fi=document.getElementById('fileInput');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');addFiles([...e.dataTransfer.files]);});
+fi.addEventListener('change',e=>addFiles([...e.target.files]));
+function addFiles(fs) {
+  fs.forEach(f=>{if(!files.find(u=>u.name===f.name))files.push(f);});
+  document.getElementById('importList').innerHTML = files.map(f=>
+    `<div class="import-file-item"><span>📄</span><span class="file-name">${f.name}</span>
+     <span class="file-size">${(f.size/1024).toFixed(1)} KB</span><span class="file-ok">✓</span></div>`).join('');
+  document.getElementById('importActions').style.display = files.length?'flex':'none';
+}
+function clearFiles() {
+  files=[]; document.getElementById('importList').innerHTML='';
+  document.getElementById('importActions').style.display='none';
+  document.getElementById('statusBar').classList.remove('show'); fi.value='';
+}
+function simulateProcess() {
+  const bar=document.getElementById('statusBar'), fill=document.getElementById('progFill'), txt=document.getElementById('statusText');
+  bar.classList.add('show');
+  const steps=[[10,'读取每日广告活动数据...'],[30,'加载目标ACOS数据...'],[50,'计算各产品平均CR...'],
+                [70,'运行极端值判断逻辑...'],[90,'生成操作建议...'],[100,'✓ 处理完成，跳转至分析结果']];
+  let i=0;
+  const go=()=>{if(i>=steps.length){setTimeout(()=>switchPage('agent'),600);return;}
+    fill.style.width=steps[i][0]+'%'; txt.textContent=steps[i][1]; i++; setTimeout(go,480);};
+  go();
+}
+
+renderData();
+</script>
+</body>
+</html>
